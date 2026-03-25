@@ -1,16 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const Route = createFileRoute("/")({
-  component: Index,
+import { CallToAction, Features, Hero, HowItWorks } from "@/components/landing";
+
+export const Route = createFileRoute("/")({
+  component: HomePage,
 });
 
-function Index() {
+function HomePage() {
   return (
-    <main>
-      <h1>Run</h1>
-      <p>Self-hosting made simple</p>
-    </main>
+    <div className="flex flex-col">
+      <Hero />
+      <Features />
+      <HowItWorks />
+      <CallToAction />
+    </div>
   );
 }
-
-export { Route };
