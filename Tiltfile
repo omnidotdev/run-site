@@ -1,3 +1,8 @@
+# load environment variables
+load("ext://dotenv", "dotenv")
+
+dotenv(fn=".env.local")
+
 project_name = "run-site"
 
 local_resource(

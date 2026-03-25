@@ -1,67 +1,10 @@
+// see https://biomejs.dev/reference/configuration
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.12/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
-  },
-  "files": {
-    "ignoreUnknown": false,
-    "includes": ["**", "!!src/routeTree.gen.ts"]
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "lineWidth": 80,
-    "indentWidth": 2
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "a11y": {
-        "useSemanticElements": "off",
-        "noStaticElementInteractions": "off",
-        "useKeyWithClickEvents": "off"
-      },
-      "correctness": {
-        "noUnusedImports": { "fix": "safe", "options": {}, "level": "error" }
-      },
-      "nursery": {
-        "useSortedClasses": {
-          "level": "error",
-          "fix": "safe",
-          "options": {
-            "attributes": ["className"],
-            "functions": ["cn, cva, tv"]
-          }
-        }
-      },
-      "style": {
-        "noNonNullAssertion": "off",
-        "useSingleVarDeclarator": "off",
-        "useImportType": {
-          "level": "error",
-          "options": { "style": "separatedType" }
-        }
-      },
-      "suspicious": {
-        "noArrayIndexKey": "warn",
-        "noNonNullAssertedOptionalChain": "off",
-        "useIterableCallbackReturn": "off",
-        "noConsole": {
-          "level": "error",
-          "options": {
-            "allow": ["error", "warn"]
-          }
-        }
-      }
-    }
   },
   "assist": {
     "actions": {
@@ -83,6 +26,58 @@
               { "type": true }
             ]
           }
+        }
+      }
+    }
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!!**/*.gen.*",
+      "!!**/bun.lock",
+      "!!**/generated",
+      "!!**/public"
+    ]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noUnusedImports": {
+          "fix": "safe",
+          "level": "error"
+        }
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "fix": "safe",
+          "level": "error",
+          "options": {
+            "attributes": ["class", "className"],
+            "functions": ["cn", "clsx", "classnames", "cva", "tv"]
+          }
+        }
+      },
+      "style": {
+        "useImportType": {
+          "level": "error",
+          "options": { "style": "separatedType" }
+        }
+      },
+      "suspicious": {
+        "noArrayIndexKey": "warn",
+        "noConsole": {
+          "level": "error",
+          "options": { "allow": ["error", "warn", "info"] }
         }
       }
     }

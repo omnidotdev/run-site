@@ -1,8 +1,16 @@
 import type { KnipConfig } from "knip";
 
-const config: KnipConfig = {
+const knipConfig: KnipConfig = {
   entry: ["src/routes/**/*.{ts,tsx}", "src/router.tsx"],
-  ignore: ["src/routeTree.gen.ts"],
+  project: ["src/**/*.{ts,tsx,css}"],
+  ignoreExportsUsedInFile: true,
+  ignore: [
+    "**/*.gen.*",
+    "**/generated/**",
+    "src/test/**",
+    "src/__tests__/**",
+    "**/*.test.{ts,tsx}",
+  ],
 };
 
-export default config;
+export default knipConfig;
