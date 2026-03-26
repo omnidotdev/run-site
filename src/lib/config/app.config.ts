@@ -1,7 +1,7 @@
 const app = {
   name: "Run",
   description:
-    "Self-hosting made simple. A CLI for deploying Omni products with one command — automatic SSL, reverse proxy, secrets, and health checks included.",
+    "Self-hosting made simple. A CLI for deploying Omni products with one command: automatic SSL, reverse proxy, secrets, and health checks included.",
   url: "https://run.omni.dev",
   docsUrl: "https://docs.omni.dev/grid/run",
   socials: {

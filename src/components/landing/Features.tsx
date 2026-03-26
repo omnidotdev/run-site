@@ -22,7 +22,7 @@ const features: Feature[] = [
     icon: <RocketIcon className="size-6 text-primary" />,
     title: "One-Command Deploys",
     description:
-      "run up runa and your full stack is running. Databases, auth, API, frontend — all wired together.",
+      "run up runa and your full stack is running. Databases, auth, API, frontend, all wired together.",
   },
   {
     icon: <ShieldCheckIcon className="size-6 text-primary" />,
@@ -40,7 +40,7 @@ const features: Feature[] = [
     icon: <KeyRoundIcon className="size-6 text-primary" />,
     title: "Secret Management",
     description:
-      "Cryptographic secrets generated on first run. Database passwords, auth tokens, OAuth credentials — all unique per deployment.",
+      "Cryptographic secrets generated on first run. Database passwords, auth tokens, OAuth credentials, all unique per deployment.",
   },
   {
     icon: <HeartPulseIcon className="size-6 text-primary" />,

@@ -25,7 +25,7 @@ const Hero = () => {
 
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Deploy Omni products with a single command. Automatic SSL, reverse
-          proxy, secrets, and health checks — all handled for you.
+          proxy, secrets, and health checks, all handled for you.
         </p>
       </div>
 
