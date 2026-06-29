@@ -1,6 +1,5 @@
+import { Button } from "@omnidotdev/thornberry/button";
 import { Link } from "@tanstack/react-router";
-
-import { Button } from "@/components/ui/button";
 
 import type { PropsWithChildren } from "react";
 

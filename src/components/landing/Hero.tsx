@@ -1,8 +1,8 @@
+import { Button } from "@omnidotdev/thornberry/button";
 import { CheckIcon, ClipboardIcon } from "lucide-react";
 import { useState } from "react";
 
 import { ExternalLink } from "@/components/core";
-import { Button } from "@/components/ui/button";
 import app from "@/lib/config/app.config";
 
 const installCommand = "curl -fsSL https://run.omni.dev/install.sh | sh";
