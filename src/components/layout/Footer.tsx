@@ -23,6 +23,22 @@ const Footer = () => (
       <ExternalLink variant="ghost" href={app.socials.x}>
         X
       </ExternalLink>
+
+      <ExternalLink variant="ghost" href={app.socials.threads}>
+        Threads
+      </ExternalLink>
+    </div>
+
+    <div className="h-1/2 w-px bg-muted-foreground/30" />
+
+    <div className="flex items-center gap-1">
+      <ExternalLink variant="ghost" href={app.legal.privacy}>
+        Privacy
+      </ExternalLink>
+
+      <ExternalLink variant="ghost" href={app.legal.terms}>
+        Terms
+      </ExternalLink>
     </div>
   </footer>
 );
