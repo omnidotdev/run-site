@@ -39,6 +39,10 @@ const Footer = () => (
       <ExternalLink variant="ghost" href={app.legal.terms}>
         Terms
       </ExternalLink>
+
+      <ExternalLink variant="ghost" href={app.legal.cookies}>
+        Cookies
+      </ExternalLink>
     </div>
   </footer>
 );
