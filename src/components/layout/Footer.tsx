@@ -2,18 +2,18 @@ import { ExternalLink } from "@/components/core";
 import app from "@/lib/config/app.config";
 
 const Footer = () => (
-  <footer className="flex w-full items-center justify-center gap-1 p-4 text-muted-foreground">
+  <footer className="flex w-full flex-col items-center justify-center gap-2 p-4 text-muted-foreground sm:flex-row sm:gap-1">
     <p className="px-3">
       &copy; {new Date().getFullYear()} {app.organization.name}
     </p>
 
-    <div className="h-1/2 w-px bg-muted-foreground/30" />
+    <div className="hidden h-1/2 w-px bg-muted-foreground/30 sm:block" />
 
     <ExternalLink variant="ghost" href={app.docsUrl}>
       Docs
     </ExternalLink>
 
-    <div className="h-1/2 w-px bg-muted-foreground/30" />
+    <div className="hidden h-1/2 w-px bg-muted-foreground/30 sm:block" />
 
     <div className="flex items-center gap-1">
       <ExternalLink variant="ghost" href={app.socials.discord}>
@@ -29,7 +29,7 @@ const Footer = () => (
       </ExternalLink>
     </div>
 
-    <div className="h-1/2 w-px bg-muted-foreground/30" />
+    <div className="hidden h-1/2 w-px bg-muted-foreground/30 sm:block" />
 
     <div className="flex items-center gap-1">
       <ExternalLink variant="ghost" href={app.legal.privacy}>
