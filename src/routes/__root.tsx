@@ -107,7 +107,7 @@ function RootDocument({ children }: PropsWithChildren) {
         <ThemeProvider theme={theme}>
           <Header />
 
-          <div className="relative flex h-dvh w-full flex-col gap-0 pl-[calc(100vw-100%)]">
+          <div className="relative flex h-dvh w-full flex-col gap-0">
             <main className="mt-16.5 flex-1">{children}</main>
 
             <Footer />
