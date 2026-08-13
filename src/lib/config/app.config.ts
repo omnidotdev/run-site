@@ -1,5 +1,7 @@
 const app = {
   name: "Run",
+  // Mirrors the omni-api product catalog SSOT
+  icon: "🏃",
   description:
     "Self-hosting made simple. A CLI for deploying Omni products with one command: automatic SSL, reverse proxy, secrets, and health checks included.",
   url: "https://run.omni.dev",
@@ -17,6 +19,7 @@ const app = {
   },
   organization: {
     name: "Omni",
+    url: "https://omni.dev",
     supportEmailAddress: "support@omni.dev",
   },
   links: {

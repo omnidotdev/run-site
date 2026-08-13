@@ -15,7 +15,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@omnidotdev/thornberry": "github:omnidotdev/thornberry#6f878df",
+    "@omnidotdev/thornberry": "github:omnidotdev/thornberry#61a79b6",
     "@ark-ui/react": "^5.34.1",
     "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-router": "^1.144.0",
