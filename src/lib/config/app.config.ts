@@ -5,7 +5,7 @@ const app = {
   description:
     "Self-hosting made simple. A CLI for deploying Omni products with one command: automatic SSL, reverse proxy, secrets, and health checks included.",
   url: "https://run.omni.dev",
-  docsUrl: "https://docs.omni.dev/grid/run",
+  docsUrl: "https://docs.omni.dev/products/run",
   socials: {
     discord: "https://discord.gg/omnidotdev",
     x: "https://x.com/omnidotdev",
