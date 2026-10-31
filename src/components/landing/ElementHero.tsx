@@ -84,7 +84,7 @@ const ElementHero = () => {
           and health checks handled for you.
         </p>
 
-        <div className="mt-8 grid items-stretch gap-6 md:grid-cols-[260px_1fr]">
+        <div className="mt-8 grid grid-cols-1 items-stretch gap-6 md:grid-cols-[260px_1fr]">
           {/* big element tile for run */}
           <div className="relative flex flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-sm">
             <span className="absolute inset-x-0 top-0 h-1.5 bg-primary" />
@@ -242,7 +242,7 @@ const ElementHero = () => {
         </div>
 
         {/* neighboring product elements */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {miniElements.map((element) => (
             <a
               key={element.symbol}
