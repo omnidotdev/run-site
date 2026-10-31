@@ -198,6 +198,40 @@ const ElementHero = () => {
                   )}
                 </button>
               </div>
+
+              <p className="mt-3 text-muted-foreground text-xs leading-relaxed">
+                Also on{" "}
+                <a
+                  href="https://github.com/omnidotdev/homebrew-tap"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline underline-offset-2"
+                >
+                  Homebrew
+                </a>{" "}
+                and the{" "}
+                <a
+                  href="https://aur.archlinux.org/packages/omnidotdev-run-cli"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline underline-offset-2"
+                >
+                  AUR
+                </a>{" "}
+                (
+                <code className="font-mono text-[11px]">
+                  paru -S omnidotdev-run-cli
+                </code>
+                ).{" "}
+                <a
+                  href="https://docs.omni.dev/products/run#installation"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary-600 underline underline-offset-2 dark:text-primary-400"
+                >
+                  All install options
+                </a>
+              </p>
             </div>
           </div>
         </div>
