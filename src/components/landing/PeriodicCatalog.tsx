@@ -16,7 +16,8 @@ interface Element {
   // the product's logo mark (shown recolored white on the cell)
   mark: string;
   href: string;
-  // product accent, applied to the filled cell
+  // product brand color, mirrored from the omni-api catalog SSOT, applied to
+  // the filled cell
   color: string;
 }
 
@@ -28,7 +29,7 @@ const elements: Record<string, Element> = {
     name: "Vortex",
     mark: "/vortex-mark.png",
     href: "https://vortex.omni.dev",
-    color: "bg-cyan-600",
+    color: "#795bbf",
   },
   "5-8": {
     number: 16,
@@ -36,7 +37,7 @@ const elements: Record<string, Element> = {
     name: "Runa",
     mark: "/runa-mark.svg",
     href: "https://runa.omni.dev",
-    color: "bg-indigo-600",
+    color: "#f89d00",
   },
   "7-11": {
     number: 42,
@@ -44,7 +45,7 @@ const elements: Record<string, Element> = {
     name: "Backfeed",
     mark: "/backfeed-mark.svg",
     href: "https://backfeed.omni.dev",
-    color: "bg-orange-600",
+    color: "#ff6347",
   },
 };
 
@@ -91,9 +92,9 @@ const buildNodes = (): Node[] => {
 const nodes = buildNodes();
 
 const legend = [
-  { label: "Project management", swatch: "bg-indigo-600" },
-  { label: "Customer feedback", swatch: "bg-orange-600" },
-  { label: "Event bus", swatch: "bg-cyan-600" },
+  { label: "Project management", swatch: "#f89d00" },
+  { label: "Customer feedback", swatch: "#ff6347" },
+  { label: "Event bus", swatch: "#795bbf" },
 ];
 
 const PeriodicCatalog = () => (
@@ -113,7 +114,10 @@ const PeriodicCatalog = () => (
             key={entry.label}
             className="flex items-center gap-2 font-semibold text-muted-foreground text-xs"
           >
-            <i className={`inline-block size-3 rounded-sm ${entry.swatch}`} />
+            <i
+              className="inline-block size-3 rounded-sm"
+              style={{ backgroundColor: entry.swatch }}
+            />
             {entry.label}
           </span>
         ))}
@@ -143,7 +147,8 @@ const PeriodicCatalog = () => (
                     target="blank"
                     rel="noopener noreferrer"
                     title={element.name}
-                    className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-md text-white transition-transform hover:z-10 hover:-translate-y-0.5 hover:scale-105 ${element.color}`}
+                    className="relative flex aspect-square items-center justify-center overflow-hidden rounded-md text-white transition-transform hover:z-10 hover:-translate-y-0.5 hover:scale-105"
+                    style={{ backgroundColor: element.color }}
                   >
                     <span className="absolute top-1 left-1 font-semibold text-[0.5rem] text-white/85 leading-none">
                       {element.number}
