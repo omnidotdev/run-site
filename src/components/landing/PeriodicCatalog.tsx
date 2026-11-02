@@ -16,13 +16,22 @@ interface Element {
   // the product's logo mark (shown recolored white on the cell)
   mark: string;
   href: string;
-  // product brand color, mirrored from the omni-api catalog SSOT, applied to
-  // the filled cell
+  // the filled cell's brand color hex: apps mirror the omni-api catalog SSOT;
+  // run uses the site primary green
   color: string;
 }
 
 // highlighted Omni products, keyed by `period-group`
 const elements: Record<string, Element> = {
+  // run anchors the table as element 1, matching its hero element tile
+  "1-1": {
+    number: 1,
+    symbol: "Rn",
+    name: "run",
+    mark: "/favicon.svg",
+    href: "https://run.omni.dev",
+    color: "#00965f",
+  },
   "4-15": {
     number: 18,
     symbol: "Vx",
@@ -92,6 +101,7 @@ const buildNodes = (): Node[] => {
 const nodes = buildNodes();
 
 const legend = [
+  { label: "Self-hosting engine", swatch: "#00965f" },
   { label: "Project management", swatch: "#f89d00" },
   { label: "Customer feedback", swatch: "#ff6347" },
   { label: "Event bus", swatch: "#795bbf" },
