@@ -20,6 +20,41 @@ export interface CatalogAppInput {
   required: boolean;
 }
 
+/** An auto-secret a cloud target must generate and inject as env. */
+export interface CatalogAppSecret {
+  name: string;
+  /** "hex" or "uuid". */
+  method: string;
+  length: number;
+}
+
+/** A service that gets a public URL, and the env vars bound to it. */
+export interface CatalogAppUrlBinding {
+  service: string;
+  envVars: string[];
+}
+
+/** A post-deploy hook (e.g. seeding an OAuth client). */
+export interface CatalogAppHook {
+  name: string;
+  type: string;
+  target: string;
+  database?: string | null;
+  sql?: string | null;
+  waitFor?: string | null;
+}
+
+/**
+ * The resolution a cloud target (Fractal) must reproduce that the fractal.yaml
+ * drops as local-only. An all-empty spec means the app deploys as-is.
+ */
+export interface CatalogAppDeploySpec {
+  secrets: CatalogAppSecret[];
+  urlBindings: CatalogAppUrlBinding[];
+  hooks: CatalogAppHook[];
+  skipServices: string[];
+}
+
 export interface CatalogApp {
   /** The run catalog id (e.g. "runa"); what `run up <id>` takes. */
   id: string;
@@ -33,6 +68,8 @@ export interface CatalogApp {
   hasProxy: boolean;
   /** The Fractal manifest (fractal.yaml) this app deploys. */
   manifest: string;
+  /** What a cloud target must resolve (secrets, URL wiring, hooks, skips). */
+  deploySpec: CatalogAppDeploySpec;
 }
 
 export const catalogApps: CatalogApp[] = [
@@ -65,7 +102,40 @@ export const catalogApps: CatalogApp[] = [
     "inputs": [],
     "hasSecrets": true,
     "hasProxy": true,
-    "manifest": "version: '1'\nservices:\n  api:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/backfeed-api\n        tag: latest\n    serviceType: web\n    expose:\n      port: 4000\n      tls: true\n    deploy:\n      env:\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: CORS_ALLOWED_ORIGINS\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@db:5432/backfeed\n      - name: HOST\n        value: 0.0.0.0\n      - name: NODE_ENV\n        value: production\n      - name: PORT\n        value: '4000'\n  app:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/backfeed-app\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: NODE_ENV\n        value: production\n      - name: VITE_API_BASE_URL\n        value: ${API_BASE_URL}\n      - name: VITE_BASE_URL\n        value: ${BASE_URL}\n  caddy:\n    source:\n      image:\n        repository: caddy\n        tag: 2-alpine\n    serviceType: worker\n    deploy: {}\n  db:\n    source:\n      image:\n        repository: pgvector/pgvector\n        tag: pg18\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${DB_NAME:-backfeed}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql\n        size: 5Gi\n"
+    "manifest": "version: '1'\nservices:\n  api:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/backfeed-api\n        tag: latest\n    serviceType: web\n    expose:\n      port: 4000\n      tls: true\n    deploy:\n      env:\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: CORS_ALLOWED_ORIGINS\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@db:5432/backfeed\n      - name: HOST\n        value: 0.0.0.0\n      - name: NODE_ENV\n        value: production\n      - name: PORT\n        value: '4000'\n  app:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/backfeed-app\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: NODE_ENV\n        value: production\n      - name: VITE_API_BASE_URL\n        value: ${API_BASE_URL}\n      - name: VITE_BASE_URL\n        value: ${BASE_URL}\n  caddy:\n    source:\n      image:\n        repository: caddy\n        tag: 2-alpine\n    serviceType: worker\n    deploy: {}\n  db:\n    source:\n      image:\n        repository: pgvector/pgvector\n        tag: pg18\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${DB_NAME:-backfeed}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql\n        size: 5Gi\n",
+    "deploySpec": {
+      "hooks": [],
+      "secrets": [
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "DB_PASSWORD"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "AUTH_SECRET"
+        }
+      ],
+      "skipServices": [
+        "caddy"
+      ],
+      "urlBindings": [
+        {
+          "envVars": [
+            "BASE_URL",
+            "APP_BASE_URL"
+          ],
+          "service": "app"
+        },
+        {
+          "envVars": [
+            "API_BASE_URL"
+          ],
+          "service": "api"
+        }
+      ]
+    }
   },
   {
     "id": "pihole",
@@ -85,7 +155,19 @@ export const catalogApps: CatalogApp[] = [
     "inputs": [],
     "hasSecrets": true,
     "hasProxy": false,
-    "manifest": "version: '1'\nservices:\n  pihole:\n    source:\n      image:\n        repository: pihole/pihole\n        tag: 2024.07.0\n    serviceType: web\n    expose:\n      port: 53\n      tls: true\n    deploy:\n      env:\n      - name: TZ\n        value: ${TZ:-UTC}\n      - name: WEBPASSWORD\n        value: ${WEBPASSWORD}\n      volumes:\n      - mountPath: /etc/pihole\n        size: 5Gi\n      - mountPath: /etc/dnsmasq.d\n        size: 5Gi\n"
+    "manifest": "version: '1'\nservices:\n  pihole:\n    source:\n      image:\n        repository: pihole/pihole\n        tag: 2024.07.0\n    serviceType: web\n    expose:\n      port: 53\n      tls: true\n    deploy:\n      env:\n      - name: TZ\n        value: ${TZ:-UTC}\n      - name: WEBPASSWORD\n        value: ${WEBPASSWORD}\n      volumes:\n      - mountPath: /etc/pihole\n        size: 5Gi\n      - mountPath: /etc/dnsmasq.d\n        size: 5Gi\n",
+    "deploySpec": {
+      "hooks": [],
+      "secrets": [
+        {
+          "length": 16,
+          "method": "hex",
+          "name": "WEBPASSWORD"
+        }
+      ],
+      "skipServices": [],
+      "urlBindings": []
+    }
   },
   {
     "id": "runa",
@@ -126,7 +208,65 @@ export const catalogApps: CatalogApp[] = [
     "inputs": [],
     "hasSecrets": true,
     "hasProxy": true,
-    "manifest": "version: '1'\nservices:\n  api:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/runa-api\n        tag: latest\n    serviceType: web\n    expose:\n      port: 4000\n      tls: true\n    deploy:\n      env:\n      - name: AUTHZ_ENABLED\n        value: 'false'\n      - name: AUTH_BASE_URL\n        value: ${AUTH_BASE_URL}\n      - name: CORS_ALLOWED_ORIGINS\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@db:5432/runa\n      - name: HOST\n        value: 0.0.0.0\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: PORT\n        value: '4000'\n  app:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/runa-app\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: API_BASE_URL\n        value: ${API_BASE_URL}\n      - name: API_INTERNAL_URL\n        value: http://api:4000\n      - name: AUTH_BASE_URL\n        value: ${AUTH_BASE_URL}\n      - name: AUTH_CLIENT_ID\n        value: ${AUTH_CLIENT_ID}\n      - name: AUTH_CLIENT_SECRET\n        value: ${AUTH_CLIENT_SECRET}\n      - name: AUTH_INTERNAL_URL\n        value: http://auth:3000\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: BASE_URL\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@db:5432/runa\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: VITE_BILLING_BASE_URL\n        value: ''\n      - name: VITE_CONSOLE_URL\n        value: ''\n  auth:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/gatekeeper\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@auth-db:5432/auth\n      - name: DEFAULT_CLIENT_ID\n        value: ${AUTH_CLIENT_ID}\n      - name: DEFAULT_CLIENT_REDIRECT_URIS\n        value: ${BASE_URL}/api/auth/oauth2/callback/omni\n      - name: DEFAULT_CLIENT_SECRET\n        value: ${AUTH_CLIENT_SECRET}\n      - name: ENABLE_BREACH_CHECK\n        value: 'false'\n      - name: NODE_ENV\n        value: production\n      - name: SENDER_EMAIL_ADDRESS\n        value: noreply@localhost\n      - name: TRUSTED_DOMAIN\n        value: localhost\n      - name: VITE_APP_URL\n        value: ${AUTH_BASE_URL}\n      - name: VITE_BASE_URL\n        value: ${AUTH_BASE_URL}\n      - name: VITE_FLAGS_API_HOST\n        value: ''\n  auth-db:\n    source:\n      image:\n        repository: postgres\n        tag: 16-alpine\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${AUTH_DB_NAME:-auth}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql/data\n        size: 5Gi\n  caddy:\n    source:\n      image:\n        repository: caddy\n        tag: 2-alpine\n    serviceType: worker\n    deploy: {}\n  db:\n    source:\n      image:\n        repository: postgres\n        tag: 16-alpine\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${DB_NAME:-runa}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql/data\n        size: 5Gi\n"
+    "manifest": "version: '1'\nservices:\n  api:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/runa-api\n        tag: latest\n    serviceType: web\n    expose:\n      port: 4000\n      tls: true\n    deploy:\n      env:\n      - name: AUTHZ_ENABLED\n        value: 'false'\n      - name: AUTH_BASE_URL\n        value: ${AUTH_BASE_URL}\n      - name: CORS_ALLOWED_ORIGINS\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@db:5432/runa\n      - name: HOST\n        value: 0.0.0.0\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: PORT\n        value: '4000'\n  app:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/runa-app\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: API_BASE_URL\n        value: ${API_BASE_URL}\n      - name: API_INTERNAL_URL\n        value: http://api:4000\n      - name: AUTH_BASE_URL\n        value: ${AUTH_BASE_URL}\n      - name: AUTH_CLIENT_ID\n        value: ${AUTH_CLIENT_ID}\n      - name: AUTH_CLIENT_SECRET\n        value: ${AUTH_CLIENT_SECRET}\n      - name: AUTH_INTERNAL_URL\n        value: http://auth:3000\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: BASE_URL\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@db:5432/runa\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: VITE_BILLING_BASE_URL\n        value: ''\n      - name: VITE_CONSOLE_URL\n        value: ''\n  auth:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/gatekeeper\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: DATABASE_URL\n        value: postgres://postgres:${DB_PASSWORD}@auth-db:5432/auth\n      - name: DEFAULT_CLIENT_ID\n        value: ${AUTH_CLIENT_ID}\n      - name: DEFAULT_CLIENT_REDIRECT_URIS\n        value: ${BASE_URL}/api/auth/oauth2/callback/omni\n      - name: DEFAULT_CLIENT_SECRET\n        value: ${AUTH_CLIENT_SECRET}\n      - name: ENABLE_BREACH_CHECK\n        value: 'false'\n      - name: NODE_ENV\n        value: production\n      - name: SENDER_EMAIL_ADDRESS\n        value: noreply@localhost\n      - name: TRUSTED_DOMAIN\n        value: localhost\n      - name: VITE_APP_URL\n        value: ${AUTH_BASE_URL}\n      - name: VITE_BASE_URL\n        value: ${AUTH_BASE_URL}\n      - name: VITE_FLAGS_API_HOST\n        value: ''\n  auth-db:\n    source:\n      image:\n        repository: postgres\n        tag: 16-alpine\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${AUTH_DB_NAME:-auth}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql/data\n        size: 5Gi\n  caddy:\n    source:\n      image:\n        repository: caddy\n        tag: 2-alpine\n    serviceType: worker\n    deploy: {}\n  db:\n    source:\n      image:\n        repository: postgres\n        tag: 16-alpine\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${DB_NAME:-runa}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql/data\n        size: 5Gi\n",
+    "deploySpec": {
+      "hooks": [
+        {
+          "database": "auth",
+          "name": "seed-oauth-client",
+          "sql": "INSERT INTO oauth_client (\n  id, client_id, client_secret, name, redirect_uris,\n  skip_consent, require_pkce, grant_types, response_types,\n  token_endpoint_auth_method, created_at, updated_at\n) SELECT\n  gen_random_uuid(), '$AUTH_CLIENT_ID', '$AUTH_CLIENT_SECRET_HASH',\n  'default', ARRAY['$REDIRECT_URI'],\n  true, true,\n  ARRAY['authorization_code', 'refresh_token'],\n  ARRAY['code'],\n  'client_secret_post', NOW(), NOW()\nWHERE NOT EXISTS (SELECT 1 FROM oauth_client WHERE client_id = '$AUTH_CLIENT_ID');\n",
+          "target": "auth-db",
+          "type": "sql",
+          "waitFor": "healthy"
+        }
+      ],
+      "secrets": [
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "DB_PASSWORD"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "AUTH_SECRET"
+        },
+        {
+          "length": 16,
+          "method": "hex",
+          "name": "AUTH_CLIENT_ID"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "AUTH_CLIENT_SECRET"
+        }
+      ],
+      "skipServices": [
+        "caddy"
+      ],
+      "urlBindings": [
+        {
+          "envVars": [
+            "BASE_URL",
+            "APP_BASE_URL"
+          ],
+          "service": "app"
+        },
+        {
+          "envVars": [
+            "AUTH_BASE_URL"
+          ],
+          "service": "auth"
+        },
+        {
+          "envVars": [
+            "API_BASE_URL"
+          ],
+          "service": "api"
+        }
+      ]
+    }
   },
   {
     "id": "uptime-kuma",
@@ -144,7 +284,13 @@ export const catalogApps: CatalogApp[] = [
     "inputs": [],
     "hasSecrets": false,
     "hasProxy": false,
-    "manifest": "version: '1'\nservices:\n  app:\n    source:\n      image:\n        repository: louislam/uptime-kuma\n        tag: '1'\n    serviceType: web\n    expose:\n      port: 3001\n      tls: true\n    deploy:\n      volumes:\n      - mountPath: /app/data\n        size: 5Gi\n"
+    "manifest": "version: '1'\nservices:\n  app:\n    source:\n      image:\n        repository: louislam/uptime-kuma\n        tag: '1'\n    serviceType: web\n    expose:\n      port: 3001\n      tls: true\n    deploy:\n      volumes:\n      - mountPath: /app/data\n        size: 5Gi\n",
+    "deploySpec": {
+      "hooks": [],
+      "secrets": [],
+      "skipServices": [],
+      "urlBindings": []
+    }
   },
   {
     "id": "vortex",
@@ -190,6 +336,59 @@ export const catalogApps: CatalogApp[] = [
     "inputs": [],
     "hasSecrets": true,
     "hasProxy": true,
-    "manifest": "version: '1'\nservices:\n  api:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/vortex-api\n        tag: latest\n    serviceType: web\n    expose:\n      port: 4000\n      tls: true\n    deploy:\n      env:\n      - name: CACHE_URL\n        value: redis://default:${CACHE_PASSWORD}@cache:6379\n      - name: CORS_ALLOWED_ORIGINS\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-vortex}\n      - name: ENCRYPTION_KEY\n        value: ${ENCRYPTION_KEY}\n      - name: EVENTS_URL\n        value: iggy://events:8090\n      - name: HATCHET_CLIENT_TLS_STRATEGY\n        value: none\n      - name: HATCHET_CLIENT_TOKEN\n        value: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ2b3J0ZXgtc2VsZmhvc3QiLCJncnBjX2Jyb2FkY2FzdF9hZGRyZXNzIjoibG9jYWxob3N0OjcwNzciLCJzZXJ2ZXJfdXJsIjoiaHR0cDovL2xvY2FsaG9zdDo3MDc3In0.placeholder\n      - name: HOST\n        value: 0.0.0.0\n      - name: IGGY_PASSWORD\n        value: ${IGGY_PASSWORD}\n      - name: IGGY_USERNAME\n        value: ${IGGY_USERNAME:-iggy}\n      - name: INTERNAL_API_SECRET\n        value: ${INTERNAL_API_SECRET}\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: PLATFORM_ORG_ID\n        value: ${PLATFORM_ORG_ID:-self-host}\n      - name: PORT\n        value: '4000'\n      - name: SELF_HOST_MODE\n        value: 'true'\n      - name: WORKER_URL\n        value: http://worker:8080\n  app:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/vortex-app\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: API_INTERNAL_URL\n        value: http://api:4000\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: CACHE_URL\n        value: redis://default:${CACHE_PASSWORD}@cache:6379\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: VITE_API_BASE_URL\n        value: ${API_BASE_URL}\n      - name: VITE_BASE_URL\n        value: ${BASE_URL}\n  cache:\n    source:\n      image:\n        repository: docker.io/valkey/valkey\n        tag: 8-alpine\n    serviceType: worker\n    deploy:\n      command:\n      - valkey-server\n      - --requirepass\n      - ${CACHE_PASSWORD}\n      volumes:\n      - mountPath: /data\n        size: 5Gi\n  caddy:\n    source:\n      image:\n        repository: caddy\n        tag: 2-alpine\n    serviceType: worker\n    deploy: {}\n  db:\n    source:\n      image:\n        repository: postgres\n        tag: 18-alpine\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${DB_NAME:-vortex}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql\n        size: 5Gi\n  events:\n    source:\n      image:\n        repository: apache/iggy\n        tag: 0.7.0\n    serviceType: worker\n    deploy:\n      env:\n      - name: IGGY_HTTP_ADDRESS\n        value: 0.0.0.0:3000\n      - name: IGGY_HTTP_ENABLED\n        value: 'true'\n      - name: IGGY_ROOT_PASSWORD\n        value: ${IGGY_PASSWORD}\n      - name: IGGY_ROOT_USERNAME\n        value: ${IGGY_USERNAME:-iggy}\n      - name: IGGY_TCP_ADDRESS\n        value: 0.0.0.0:8090\n      volumes:\n      - mountPath: /local_data\n        size: 5Gi\n  worker:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/vortex-worker\n        tag: latest\n    serviceType: worker\n    deploy:\n      env:\n      - name: CACHE_URL\n        value: redis://default:${CACHE_PASSWORD}@cache:6379\n      - name: DATABASE_URL\n        value: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-vortex}\n      - name: ENCRYPTION_KEY\n        value: ${ENCRYPTION_KEY}\n      - name: EVENTS_URL\n        value: iggy://events:8090\n      - name: HATCHET_CLIENT_TLS_STRATEGY\n        value: none\n      - name: HATCHET_CLIENT_TOKEN\n        value: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ2b3J0ZXgtc2VsZmhvc3QiLCJncnBjX2Jyb2FkY2FzdF9hZGRyZXNzIjoibG9jYWxob3N0OjcwNzciLCJzZXJ2ZXJfdXJsIjoiaHR0cDovL2xvY2FsaG9zdDo3MDc3In0.placeholder\n      - name: HEALTH_PORT\n        value: '8080'\n      - name: IGGY_PASSWORD\n        value: ${IGGY_PASSWORD}\n      - name: IGGY_USERNAME\n        value: ${IGGY_USERNAME:-iggy}\n      - name: INTERNAL_API_SECRET\n        value: ${INTERNAL_API_SECRET}\n      - name: NODE_ENV\n        value: production\n      - name: VORTEX_API_URL\n        value: http://api:4000\n      - name: VORTEX_CALLBACK_BASE_URL\n        value: ${BASE_URL}\n      - name: VORTEX_PUBLIC_URL\n        value: ${API_BASE_URL}\n"
+    "manifest": "version: '1'\nservices:\n  api:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/vortex-api\n        tag: latest\n    serviceType: web\n    expose:\n      port: 4000\n      tls: true\n    deploy:\n      env:\n      - name: CACHE_URL\n        value: redis://default:${CACHE_PASSWORD}@cache:6379\n      - name: CORS_ALLOWED_ORIGINS\n        value: ${BASE_URL}\n      - name: DATABASE_URL\n        value: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-vortex}\n      - name: ENCRYPTION_KEY\n        value: ${ENCRYPTION_KEY}\n      - name: EVENTS_URL\n        value: iggy://events:8090\n      - name: HATCHET_CLIENT_TLS_STRATEGY\n        value: none\n      - name: HATCHET_CLIENT_TOKEN\n        value: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ2b3J0ZXgtc2VsZmhvc3QiLCJncnBjX2Jyb2FkY2FzdF9hZGRyZXNzIjoibG9jYWxob3N0OjcwNzciLCJzZXJ2ZXJfdXJsIjoiaHR0cDovL2xvY2FsaG9zdDo3MDc3In0.placeholder\n      - name: HOST\n        value: 0.0.0.0\n      - name: IGGY_PASSWORD\n        value: ${IGGY_PASSWORD}\n      - name: IGGY_USERNAME\n        value: ${IGGY_USERNAME:-iggy}\n      - name: INTERNAL_API_SECRET\n        value: ${INTERNAL_API_SECRET}\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: PLATFORM_ORG_ID\n        value: ${PLATFORM_ORG_ID:-self-host}\n      - name: PORT\n        value: '4000'\n      - name: SELF_HOST_MODE\n        value: 'true'\n      - name: WORKER_URL\n        value: http://worker:8080\n  app:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/vortex-app\n        tag: latest\n    serviceType: web\n    expose:\n      port: 3000\n      tls: true\n    deploy:\n      env:\n      - name: API_INTERNAL_URL\n        value: http://api:4000\n      - name: AUTH_SECRET\n        value: ${AUTH_SECRET}\n      - name: CACHE_URL\n        value: redis://default:${CACHE_PASSWORD}@cache:6379\n      - name: NODE_ENV\n        value: production\n      - name: NODE_TLS_REJECT_UNAUTHORIZED\n        value: '0'\n      - name: VITE_API_BASE_URL\n        value: ${API_BASE_URL}\n      - name: VITE_BASE_URL\n        value: ${BASE_URL}\n  cache:\n    source:\n      image:\n        repository: docker.io/valkey/valkey\n        tag: 8-alpine\n    serviceType: worker\n    deploy:\n      command:\n      - valkey-server\n      - --requirepass\n      - ${CACHE_PASSWORD}\n      volumes:\n      - mountPath: /data\n        size: 5Gi\n  caddy:\n    source:\n      image:\n        repository: caddy\n        tag: 2-alpine\n    serviceType: worker\n    deploy: {}\n  db:\n    source:\n      image:\n        repository: postgres\n        tag: 18-alpine\n    serviceType: worker\n    deploy:\n      env:\n      - name: POSTGRES_DB\n        value: ${DB_NAME:-vortex}\n      - name: POSTGRES_PASSWORD\n        value: ${DB_PASSWORD}\n      - name: POSTGRES_USER\n        value: ${DB_USER:-postgres}\n      volumes:\n      - mountPath: /var/lib/postgresql\n        size: 5Gi\n  events:\n    source:\n      image:\n        repository: apache/iggy\n        tag: 0.7.0\n    serviceType: worker\n    deploy:\n      env:\n      - name: IGGY_HTTP_ADDRESS\n        value: 0.0.0.0:3000\n      - name: IGGY_HTTP_ENABLED\n        value: 'true'\n      - name: IGGY_ROOT_PASSWORD\n        value: ${IGGY_PASSWORD}\n      - name: IGGY_ROOT_USERNAME\n        value: ${IGGY_USERNAME:-iggy}\n      - name: IGGY_TCP_ADDRESS\n        value: 0.0.0.0:8090\n      volumes:\n      - mountPath: /local_data\n        size: 5Gi\n  worker:\n    source:\n      image:\n        repository: api.manifold.omni.dev/omni/vortex-worker\n        tag: latest\n    serviceType: worker\n    deploy:\n      env:\n      - name: CACHE_URL\n        value: redis://default:${CACHE_PASSWORD}@cache:6379\n      - name: DATABASE_URL\n        value: postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-vortex}\n      - name: ENCRYPTION_KEY\n        value: ${ENCRYPTION_KEY}\n      - name: EVENTS_URL\n        value: iggy://events:8090\n      - name: HATCHET_CLIENT_TLS_STRATEGY\n        value: none\n      - name: HATCHET_CLIENT_TOKEN\n        value: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ2b3J0ZXgtc2VsZmhvc3QiLCJncnBjX2Jyb2FkY2FzdF9hZGRyZXNzIjoibG9jYWxob3N0OjcwNzciLCJzZXJ2ZXJfdXJsIjoiaHR0cDovL2xvY2FsaG9zdDo3MDc3In0.placeholder\n      - name: HEALTH_PORT\n        value: '8080'\n      - name: IGGY_PASSWORD\n        value: ${IGGY_PASSWORD}\n      - name: IGGY_USERNAME\n        value: ${IGGY_USERNAME:-iggy}\n      - name: INTERNAL_API_SECRET\n        value: ${INTERNAL_API_SECRET}\n      - name: NODE_ENV\n        value: production\n      - name: VORTEX_API_URL\n        value: http://api:4000\n      - name: VORTEX_CALLBACK_BASE_URL\n        value: ${BASE_URL}\n      - name: VORTEX_PUBLIC_URL\n        value: ${API_BASE_URL}\n",
+    "deploySpec": {
+      "hooks": [],
+      "secrets": [
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "DB_PASSWORD"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "CACHE_PASSWORD"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "IGGY_PASSWORD"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "AUTH_SECRET"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "ENCRYPTION_KEY"
+        },
+        {
+          "length": 32,
+          "method": "hex",
+          "name": "INTERNAL_API_SECRET"
+        }
+      ],
+      "skipServices": [
+        "caddy"
+      ],
+      "urlBindings": [
+        {
+          "envVars": [
+            "BASE_URL",
+            "APP_BASE_URL"
+          ],
+          "service": "app"
+        },
+        {
+          "envVars": [
+            "API_BASE_URL"
+          ],
+          "service": "api"
+        }
+      ]
+    }
   }
 ];

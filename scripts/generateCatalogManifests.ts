@@ -26,6 +26,20 @@ const outPath = resolve(
   "../src/data/generated/catalogApps.ts",
 );
 
+interface RunDeploySpec {
+  secrets: { name: string; method: string; length: number }[];
+  urlBindings: { service: string; envVars: string[] }[];
+  hooks: {
+    name: string;
+    type: string;
+    target: string;
+    database?: string | null;
+    sql?: string | null;
+    waitFor?: string | null;
+  }[];
+  skipServices: string[];
+}
+
 interface RunDeployJson {
   name: string;
   displayName?: string | null;
@@ -35,6 +49,7 @@ interface RunDeployJson {
   hasSecrets: boolean;
   hasProxy: boolean;
   fractalManifest: string;
+  deploySpec?: RunDeploySpec;
 }
 
 /** Run the CLI for one app, or null if it is unavailable or fails. */
@@ -96,6 +111,15 @@ const apps = results
       hasSecrets: app.hasSecrets,
       hasProxy: app.hasProxy,
       manifest: app.fractalManifest,
+      // Older `run` binaries predate --format json's deploySpec; default to an
+      // empty spec so the shape is stable for consumers (an app with an empty
+      // spec deploys as-is, no resolution needed).
+      deploySpec: app.deploySpec ?? {
+        secrets: [],
+        urlBindings: [],
+        hooks: [],
+        skipServices: [],
+      },
     };
   });
 
@@ -123,6 +147,41 @@ export interface CatalogAppInput {
   required: boolean;
 }
 
+/** An auto-secret a cloud target must generate and inject as env. */
+export interface CatalogAppSecret {
+  name: string;
+  /** "hex" or "uuid". */
+  method: string;
+  length: number;
+}
+
+/** A service that gets a public URL, and the env vars bound to it. */
+export interface CatalogAppUrlBinding {
+  service: string;
+  envVars: string[];
+}
+
+/** A post-deploy hook (e.g. seeding an OAuth client). */
+export interface CatalogAppHook {
+  name: string;
+  type: string;
+  target: string;
+  database?: string | null;
+  sql?: string | null;
+  waitFor?: string | null;
+}
+
+/**
+ * The resolution a cloud target (Fractal) must reproduce that the fractal.yaml
+ * drops as local-only. An all-empty spec means the app deploys as-is.
+ */
+export interface CatalogAppDeploySpec {
+  secrets: CatalogAppSecret[];
+  urlBindings: CatalogAppUrlBinding[];
+  hooks: CatalogAppHook[];
+  skipServices: string[];
+}
+
 export interface CatalogApp {
   /** The run catalog id (e.g. "runa"); what \`run up <id>\` takes. */
   id: string;
@@ -136,6 +195,8 @@ export interface CatalogApp {
   hasProxy: boolean;
   /** The Fractal manifest (fractal.yaml) this app deploys. */
   manifest: string;
+  /** What a cloud target must resolve (secrets, URL wiring, hooks, skips). */
+  deploySpec: CatalogAppDeploySpec;
 }
 
 export const catalogApps: CatalogApp[] = ${j(apps)};
@@ -143,4 +204,12 @@ export const catalogApps: CatalogApp[] = ${j(apps)};
 
 await Bun.write(outPath, file);
 
-console.info(`[catalog] Wrote ${apps.length} catalog apps`);
+// Also publish the catalog as a static JSON document so other services (the
+// Fractal one-click deploy flow) can read a catalog app's manifest from
+// run.omni.dev/catalog.json without vendoring the catalog or forking the SSOT.
+const publicPath = resolve(import.meta.dir, "../public/catalog.json");
+await Bun.write(publicPath, `${JSON.stringify({ apps }, null, 2)}\n`);
+
+console.info(
+  `[catalog] Wrote ${apps.length} catalog apps (ts + public/catalog.json)`,
+);
