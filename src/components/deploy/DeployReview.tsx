@@ -12,6 +12,7 @@ import {
 import { ExternalLink } from "@/components/core";
 import app from "@/lib/config/app.config";
 
+import type { CatalogApp } from "@/data/generated/catalogApps";
 import type { DeploySource } from "@/server/functions/deploy";
 
 const fractalUrl = app.fractal.url;
@@ -154,6 +155,75 @@ const ProblemState = ({
   </Shell>
 );
 
+/** The shared stack review: service grid, feature facets, and typed inputs. */
+const StackReview = ({
+  services,
+  hasProxy,
+  hasSecrets,
+  inputs,
+}: {
+  services: { name: string; image: string; ports?: string[] }[];
+  hasProxy: boolean;
+  hasSecrets: boolean;
+  inputs: { key: string; label?: string; required?: boolean }[];
+}) => (
+  <>
+    <section className="flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <Boxes className="size-5 text-primary" aria-hidden />
+        <h2 className="font-semibold text-lg">
+          {services.length} {services.length === 1 ? "service" : "services"}
+        </h2>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {services.map((svc) => (
+          <ServiceCard
+            key={svc.name}
+            name={svc.name}
+            image={svc.image}
+            ports={svc.ports}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        {hasProxy && (
+          <Facet icon={<ShieldCheck className="size-4" aria-hidden />}>
+            Automatic HTTPS and reverse proxy
+          </Facet>
+        )}
+        {hasSecrets && (
+          <Facet icon={<KeyRound className="size-4" aria-hidden />}>
+            Secrets generated on first run
+          </Facet>
+        )}
+      </div>
+    </section>
+
+    {inputs.length > 0 && (
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="size-5 text-primary" aria-hidden />
+          <h2 className="font-semibold text-lg">You will be asked for</h2>
+        </div>
+        <ul className="flex flex-col gap-2">
+          {inputs.map((input) => (
+            <li key={input.key} className="text-muted-foreground text-sm">
+              <span className="font-medium text-foreground">
+                {input.label ?? input.key}
+              </span>
+              {input.required && (
+                <span className="ml-2 text-amber-600 text-xs dark:text-amber-500">
+                  required
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </>
+);
+
 const DeployReview = ({ source }: { source: DeploySource }) => {
   if (source.status === "unsupported-host") {
     return (
@@ -223,60 +293,12 @@ const DeployReview = ({ source }: { source: DeploySource }) => {
         </ExternalLink>
       </header>
 
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <Boxes className="size-5 text-primary" aria-hidden />
-          <h2 className="font-semibold text-lg">
-            {recipe.services.length}{" "}
-            {recipe.services.length === 1 ? "service" : "services"}
-          </h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {recipe.services.map((svc) => (
-            <ServiceCard
-              key={svc.name}
-              name={svc.name}
-              image={svc.image}
-              ports={svc.ports}
-            />
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
-          {recipe.hasProxy && (
-            <Facet icon={<ShieldCheck className="size-4" aria-hidden />}>
-              Automatic HTTPS and reverse proxy
-            </Facet>
-          )}
-          {recipe.hasSecrets && (
-            <Facet icon={<KeyRound className="size-4" aria-hidden />}>
-              Secrets generated on first run
-            </Facet>
-          )}
-        </div>
-      </section>
-
-      {recipe.inputs.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="size-5 text-primary" aria-hidden />
-            <h2 className="font-semibold text-lg">You will be asked for</h2>
-          </div>
-          <ul className="flex flex-col gap-2">
-            {recipe.inputs.map((input) => (
-              <li key={input.key} className="text-muted-foreground text-sm">
-                <span className="font-medium text-foreground">
-                  {input.label ?? input.key}
-                </span>
-                {input.required && (
-                  <span className="ml-2 text-amber-600 text-xs dark:text-amber-500">
-                    required
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <StackReview
+        services={recipe.services}
+        hasProxy={recipe.hasProxy}
+        hasSecrets={recipe.hasSecrets}
+        inputs={recipe.inputs}
+      />
 
       <section className="flex flex-col gap-5 rounded-xl border border-base-200 bg-card p-6 dark:border-base-800">
         <h2 className="font-semibold text-lg">Send it to Fractal</h2>
@@ -326,4 +348,70 @@ const DeployReview = ({ source }: { source: DeploySource }) => {
   );
 };
 
-export { DeployReview, EmptyState };
+/** Review and deploy a built-in run catalog app (no repository involved). */
+const CatalogDeployReview = ({ app }: { app: CatalogApp }) => (
+  <Shell>
+    <header className="flex flex-col gap-3">
+      <span className="w-fit rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary text-xs">
+        run catalog
+      </span>
+      <h1 className="font-bold text-3xl tracking-tight">Deploy {app.name}</h1>
+      {app.description && (
+        <p className="text-muted-foreground">{app.description}</p>
+      )}
+    </header>
+
+    <StackReview
+      services={app.services}
+      hasProxy={app.hasProxy}
+      hasSecrets={app.hasSecrets}
+      inputs={app.inputs}
+    />
+
+    <section className="flex flex-col gap-5 rounded-xl border border-base-200 bg-card p-6 dark:border-base-800">
+      <h2 className="font-semibold text-lg">Send it to Fractal</h2>
+      <ol className="flex flex-col gap-3">
+        <Step n={1}>
+          Sign in to Fractal and choose (or create) a workspace.
+        </Step>
+        <Step n={2}>Create a project, then open its Import panel.</Step>
+        <Step n={3}>
+          Paste the stack's <Code>fractal.yaml</Code> below, or regenerate it
+          anytime with <Code>{`run deploy ${app.id}`}</Code>.
+        </Step>
+      </ol>
+
+      <details className="overflow-hidden rounded-lg border border-base-200 dark:border-base-800">
+        <summary className="cursor-pointer px-4 py-2 font-medium text-sm">
+          Show fractal.yaml
+        </summary>
+        <div className="max-h-80 overflow-auto bg-base-950 px-4 py-3">
+          <pre className="whitespace-pre font-mono text-base-200 text-xs">
+            {app.manifest}
+          </pre>
+        </div>
+      </details>
+
+      <div className="flex flex-wrap gap-3">
+        <ExternalLink variant="solid" size="lg" href={fractalUrl}>
+          Continue to Fractal
+          <ArrowUpRight className="size-4" aria-hidden />
+        </ExternalLink>
+      </div>
+    </section>
+
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <Terminal className="size-5 text-muted-foreground" aria-hidden />
+        <h2 className="font-semibold text-lg">Or self-host it locally</h2>
+      </div>
+      <div className="max-w-full overflow-x-auto rounded-lg bg-base-950 px-4 py-3">
+        <code className="block whitespace-nowrap font-mono text-base-200 text-sm">
+          <span className="text-base-500">$</span> run up {app.id}
+        </code>
+      </div>
+    </section>
+  </Shell>
+);
+
+export { DeployReview, CatalogDeployReview, EmptyState };
