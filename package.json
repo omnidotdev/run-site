@@ -6,7 +6,8 @@
   "packageManager": "bun@1.3.6",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "catalog:generate": "bun run scripts/generateCatalogManifests.ts",
+    "build": "bun catalog:generate && vite build",
     "start": "node .output/server/index.mjs",
     "check": "biome check --diagnostic-level=error src",
     "format": "biome format --write",

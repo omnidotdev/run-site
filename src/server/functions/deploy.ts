@@ -3,6 +3,10 @@ import { parse as parseToml } from "smol-toml";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 
+import { catalogApps } from "@/data/generated/catalogApps";
+
+import type { CatalogApp } from "@/data/generated/catalogApps";
+
 /** A single service parsed from a run recipe, reduced to what the review shows. */
 export interface DeployService {
   name: string;
@@ -49,6 +53,26 @@ interface RepoRef {
   ref: string;
   url: string;
 }
+
+/** A built-in run catalog app resolved for the deploy review. */
+export type CatalogDeploySource =
+  | { kind: "catalog"; app: CatalogApp }
+  | { kind: "catalog-not-found"; id: string };
+
+/**
+ * Resolve a run catalog app id into its deployable stack. The catalog is
+ * generated from the `run` CLI (the SSOT) and kept server-side so the full
+ * Fractal manifests do not ship to every client; only the selected app crosses.
+ */
+export const resolveCatalogApp = createServerFn()
+  .inputValidator(z.object({ app: z.string().min(1) }))
+  .handler(async ({ data }): Promise<CatalogDeploySource> => {
+    const app = catalogApps.find((entry) => entry.id === data.app);
+
+    return app
+      ? { kind: "catalog", app }
+      : { kind: "catalog-not-found", id: data.app };
+  });
 
 const inputSchema = z.object({
   repo: z.string().min(1),

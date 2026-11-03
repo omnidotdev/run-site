@@ -1,1 +1,5 @@
-export { DeployReview, EmptyState } from "./DeployReview";
+export {
+  CatalogDeployReview,
+  DeployReview,
+  EmptyState,
+} from "./DeployReview";

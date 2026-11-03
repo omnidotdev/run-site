@@ -1,27 +1,59 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
-import { DeployReview, EmptyState } from "@/components/deploy";
+import {
+  CatalogDeployReview,
+  DeployReview,
+  EmptyState,
+} from "@/components/deploy";
 import { BASE_URL } from "@/lib/config/env.config";
 import createMetaTags from "@/lib/util/createMetaTags";
-import { resolveDeploySource } from "@/server/functions/deploy";
+import {
+  resolveCatalogApp,
+  resolveDeploySource,
+} from "@/server/functions/deploy";
 
-import type { DeploySource } from "@/server/functions/deploy";
+import type {
+  CatalogDeploySource,
+  DeploySource,
+} from "@/server/functions/deploy";
 
 const searchSchema = z.object({
+  // a GitHub repository to deploy (the README-button flow)
   repo: z.string().optional(),
   ref: z.string().optional(),
+  // a built-in run catalog app id to deploy (e.g. "runa")
+  app: z.string().optional(),
 });
+
+type DeployLoaderData =
+  | { mode: "repo"; source: DeploySource }
+  | { mode: "catalog"; source: CatalogDeploySource }
+  | { mode: "empty" };
 
 export const Route = createFileRoute("/deploy")({
   validateSearch: searchSchema,
-  loaderDeps: ({ search }) => ({ repo: search.repo, ref: search.ref }),
-  loader: async ({ deps: { repo, ref } }): Promise<DeploySource | null> => {
-    if (!repo) {
-      return null;
+  loaderDeps: ({ search }) => ({
+    repo: search.repo,
+    ref: search.ref,
+    app: search.app,
+  }),
+  loader: async ({ deps: { repo, ref, app } }): Promise<DeployLoaderData> => {
+    if (app) {
+      return {
+        mode: "catalog",
+        source: await resolveCatalogApp({ data: { app } }),
+      };
     }
 
-    return resolveDeploySource({ data: { repo, ref } });
+    if (repo) {
+      return {
+        mode: "repo",
+        source: await resolveDeploySource({ data: { repo, ref } }),
+      };
+    }
+
+    return { mode: "empty" };
   },
   head: () => ({
     meta: createMetaTags({
@@ -35,11 +67,19 @@ export const Route = createFileRoute("/deploy")({
 });
 
 function DeployPage() {
-  const source = Route.useLoaderData();
+  const data = Route.useLoaderData();
 
-  if (!source) {
-    return <EmptyState />;
+  if (data.mode === "catalog") {
+    if (data.source.kind === "catalog-not-found") {
+      return <EmptyState />;
+    }
+
+    return <CatalogDeployReview app={data.source.app} />;
   }
 
-  return <DeployReview source={source} />;
+  if (data.mode === "repo") {
+    return <DeployReview source={data.source} />;
+  }
+
+  return <EmptyState />;
 }
