@@ -369,35 +369,43 @@ const CatalogDeployReview = ({ app }: { app: CatalogApp }) => (
     />
 
     <section className="flex flex-col gap-5 rounded-xl border border-base-200 bg-card p-6 dark:border-base-800">
-      <h2 className="font-semibold text-lg">Send it to Fractal</h2>
-      <ol className="flex flex-col gap-3">
-        <Step n={1}>
-          Sign in to Fractal and choose (or create) a workspace.
-        </Step>
-        <Step n={2}>Create a project, then open its Import panel.</Step>
-        <Step n={3}>
-          Paste the stack's <Code>fractal.yaml</Code> below, or regenerate it
-          anytime with <Code>{`run deploy ${app.id}`}</Code>.
-        </Step>
-      </ol>
-
-      <details className="overflow-hidden rounded-lg border border-base-200 dark:border-base-800">
-        <summary className="cursor-pointer px-4 py-2 font-medium text-sm">
-          Show fractal.yaml
-        </summary>
-        <div className="max-h-80 overflow-auto bg-base-950 px-4 py-3">
-          <pre className="whitespace-pre font-mono text-base-200 text-xs">
-            {app.manifest}
-          </pre>
-        </div>
-      </details>
+      <div className="flex flex-col gap-1">
+        <h2 className="font-semibold text-lg">Deploy to Omni Cloud</h2>
+        <p className="text-muted-foreground text-sm">
+          One click. Sign in with your Omni identity and {app.name} is
+          provisioned on Fractal at a public URL, with secrets and HTTPS handled
+          for you.
+        </p>
+      </div>
 
       <div className="flex flex-wrap gap-3">
-        <ExternalLink variant="solid" size="lg" href={fractalUrl}>
-          Continue to Fractal
+        <ExternalLink
+          variant="solid"
+          size="lg"
+          href={`${fractalUrl}/deploy/${app.id}`}
+        >
+          Deploy {app.name} to the cloud
           <ArrowUpRight className="size-4" aria-hidden />
         </ExternalLink>
       </div>
+
+      <details className="overflow-hidden rounded-lg border border-base-200 dark:border-base-800">
+        <summary className="cursor-pointer px-4 py-2 font-medium text-sm">
+          Prefer to import the manifest yourself?
+        </summary>
+        <div className="flex flex-col gap-3 px-4 py-3">
+          <p className="text-muted-foreground text-sm">
+            In Fractal, create a project, open its Import panel, and paste this{" "}
+            <Code>fractal.yaml</Code> (regenerate it anytime with{" "}
+            <Code>{`run deploy ${app.id}`}</Code>).
+          </p>
+          <div className="max-h-80 overflow-auto rounded-md bg-base-950 px-4 py-3">
+            <pre className="whitespace-pre font-mono text-base-200 text-xs">
+              {app.manifest}
+            </pre>
+          </div>
+        </div>
+      </details>
     </section>
 
     <section className="flex flex-col gap-3">
