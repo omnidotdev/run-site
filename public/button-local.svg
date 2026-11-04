@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="156" height="36" role="img" aria-label="Run locally">
+  <title>Run locally</title>
+  <rect width="156" height="36" rx="6" fill="#0f1020"/>
+  <g transform="translate(16 8)">
+    <circle cx="10" cy="10" r="10" fill="none" stroke="#22c55e" stroke-width="2"/>
+    <path d="M7 5 L16 10 L7 15 Z" fill="#22c55e"/>
+  </g>
+  <text x="46" y="23" font-family="system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#ffffff">Run locally</text>
+</svg>
