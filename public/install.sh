@@ -92,4 +92,35 @@ case ":${PATH}:" in
   *) info "Add ${install_dir} to your PATH:  export PATH=\"${install_dir}:\$PATH\"" ;;
 esac
 
+# --- desktop launcher (Linux) ----------------------------------------------
+# A clickable "Run" app that opens the dashboard, so self-hosting needs no
+# terminal after this install. A tiny wrapper runs the engine by absolute path
+# (a GUI session may not inherit the shell PATH) and opens the running dashboard
+# if it is already up
+if [ "$os" = "Linux" ]; then
+  wrapper="${install_dir}/run-dashboard"
+  cat > "$wrapper" <<EOF
+#!/bin/sh
+"${install_dir}/run" serve --open || xdg-open http://localhost:7878
+EOF
+  chmod +x "$wrapper"
+
+  apps_dir="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+  mkdir -p "$apps_dir"
+  cat > "${apps_dir}/run-dashboard.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Run
+Comment=Manage your self-hosted stacks in a browser
+Exec=${wrapper}
+Icon=application-x-executable
+Terminal=false
+Categories=Utility;
+EOF
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "$apps_dir" >/dev/null 2>&1 || true
+  fi
+  info "Added a \"Run\" app to your menu that opens the dashboard"
+fi
+
 printf '\nDone. Try:\n\n  run up uptime-kuma\n\n'
