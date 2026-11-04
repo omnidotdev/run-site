@@ -31,6 +31,13 @@ const app = {
   fractal: {
     url: "https://fractal.omni.dev",
   },
+  // The Omni Launcher is the desktop hub that handles `run://` deep links so a
+  // non-developer can self-host a catalog app in one click. Gated off until the
+  // Launcher ships a public download; flip `enabled` when it does
+  launcher: {
+    url: "https://launcher.omni.dev",
+    enabled: false,
+  },
   pwa: {
     themeColor: "#000000",
     backgroundColor: "#000000",

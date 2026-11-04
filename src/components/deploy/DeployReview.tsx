@@ -1,3 +1,4 @@
+import { buttonVariants } from "@omnidotdev/thornberry/button";
 import {
   ArrowUpRight,
   Boxes,
@@ -11,11 +12,13 @@ import {
 
 import { ExternalLink } from "@/components/core";
 import app from "@/lib/config/app.config";
+import cn from "@/lib/utils";
 
 import type { CatalogApp } from "@/data/generated/catalogApps";
 import type { DeploySource } from "@/server/functions/deploy";
 
 const fractalUrl = app.fractal.url;
+const launcher = app.launcher;
 
 /** Monospace inline command. */
 const Code = ({ children }: { children: string }) => (
@@ -413,6 +416,33 @@ const CatalogDeployReview = ({ app }: { app: CatalogApp }) => (
         <Terminal className="size-5 text-muted-foreground" aria-hidden />
         <h2 className="font-semibold text-lg">Or self-host it locally</h2>
       </div>
+
+      {launcher.enabled && (
+        <div className="flex flex-col gap-2">
+          {/* A run:// link hands off to the desktop Launcher in the current
+              context, so no target=_blank (which would strand a blank tab) */}
+          <a
+            href={`run://up/${app.id}`}
+            className={cn(buttonVariants({ variant: "solid", size: "lg" }))}
+          >
+            Run {app.name} locally
+            <ArrowUpRight className="size-4" aria-hidden />
+          </a>
+          <p className="text-muted-foreground text-sm">
+            Opens the Omni Launcher and starts {app.name} on your machine
+            (Docker required). Don't have it yet?{" "}
+            <ExternalLink
+              className="h-auto w-fit p-0 text-sm underline"
+              href={launcher.url}
+            >
+              Get the Launcher
+            </ExternalLink>
+            .
+          </p>
+          <p className="text-muted-foreground text-sm">Prefer the terminal?</p>
+        </div>
+      )}
+
       <div className="max-w-full overflow-x-auto rounded-lg bg-base-950 px-4 py-3">
         <code className="block whitespace-nowrap font-mono text-base-200 text-sm">
           <span className="text-base-500">$</span> run up {app.id}
